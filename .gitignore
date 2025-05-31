@@ -195,3 +195,5 @@ cython_debug/
 
 #mongodb creditials 
 mongoDB_demo.ipynb
+# dataset 50mb github limit
+quora_duplicate_questions.tsv
