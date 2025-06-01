@@ -197,3 +197,5 @@ cython_debug/
 mongoDB_demo.ipynb
 # dataset 50mb github limit
 quora_duplicate_questions.tsv
+
+artifact
