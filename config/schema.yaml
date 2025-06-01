@@ -1,0 +1,31 @@
+columns:
+  - _id: int
+  - question1: category
+  - question2: category
+  - qid1: int
+  - qid2: int
+  - is_duplicate: int
+
+numerical_columns:
+  - is_duplicate
+  - qid1
+  - qid2
+  - _id
+
+categorical_columns:
+  - question1
+  - question2
+
+drop_columns: 
+  - qid1
+  - qid2
+  - _id
+
+# for data transformation
+num_features:
+  - Age
+  - Vintage
+
+
+mm_columns:
+  - Annual_Premium
