@@ -288,15 +288,17 @@ class DataTransformation:
             q2_vecs = q2_pipeline.fit_transform(input_feature_train_df['question2'].astype(str).apply(self.preprocess))
             q1_vecs_test = q1_pipeline.transform(input_feature_test_df['question1'].astype(str).apply(self.preprocess))
             q2_vecs_test = q2_pipeline.transform(input_feature_test_df['question2'].astype(str).apply(self.preprocess))
+            logging.info("Vectorization and scaling done for question1 and question2 in train and test sets")
 
+           
             # Stack all features horizontally for each sample
             all_features = np.hstack([
                 np.tile(base_features, (q1_vecs.shape[0], 1)),
-                tf, lf, ff, q1_vecs, q2_vecs
+                tf, lf, ff, q1_vecs, q2_vecs, target_feature_train_df.values.reshape(-1, 1)
             ])
             all_features_test = np.hstack([
                 np.tile(base_features_test, (q1_vecs_test.shape[0], 1)),
-                tf_test, lf_test, ff_test, q1_vecs_test, q2_vecs_test
+                tf_test, lf_test, ff_test, q1_vecs_test, q2_vecs_test, target_feature_test_df.values.reshape(-1, 1)
             ])
             logging.info("All features concatenated for train and test data")
             logging.info(f"All features shape: {all_features.shape}, Test features shape: {all_features_test.shape}")
@@ -311,7 +313,14 @@ class DataTransformation:
             save_numpy_array_data(self.data_transformation_config.transformed_train_file_path, array=input_feature_train_final)
             save_numpy_array_data(self.data_transformation_config.transformed_test_file_path, array=input_feature_test_final)
             logging.info("Saving transformation object and transformed files.")
-        
+
+            return DataTransformationArtifact(
+                transformed_object_file_path=self.data_transformation_config.transformed_object_file_path,
+                transformed_train_file_path=self.data_transformation_config.transformed_train_file_path,
+                transformed_test_file_path=self.data_transformation_config.transformed_test_file_path
+            )
+
+
         except Exception as e:
             logging.info("Exception occured before initiating tranformation block")
             raise MyException(e, sys)
