@@ -19,6 +19,8 @@ from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
 from fuzzywuzzy import fuzz
 from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.base import BaseEstimator, TransformerMixin
+
 
 nltk.download('stopwords')
 nltk.download('wordnet')
@@ -158,6 +160,7 @@ class DataTransformation:
             train_df = self.read_data(file_path=self.data_ingestion_artifact.trained_file_path)
             test_df = self.read_data(file_path=self.data_ingestion_artifact.test_file_path)
             logging.info("Train-Test data loaded")
+       
 
             input_feature_train_df = train_df.drop(columns=[TARGET_COLUMN], axis=1)
             target_feature_train_df = train_df[TARGET_COLUMN]
@@ -186,7 +189,7 @@ class DataTransformation:
                 self.test_total_words(q1, q2)
                 for q1, q2 in zip(input_feature_train_df['question1'], input_feature_train_df['question2'])
             ]),
-]
+            ]
             base_features_test =  [
             len(input_feature_test_df),  # number of rows
             len(input_feature_test_df),  # number of rows (for question2)
@@ -249,25 +252,46 @@ class DataTransformation:
             logging.info("Token, Length and Fuzzy features calculated for train and test data")
             
         
-            # --- Keep only this vectorization block ---
-            cv = CountVectorizer(max_features=5000)
-            logging.info("CountVectorizer initialized for text vectorization with max_features=4000")
-            # Combine all questions from train and test data for vectorization
+            # --- Keep only this vectorization block --
+
+            # --- Vectorization and scaling pipeline for question1 and question2 ---
+            class TextVectorizerTransformer(BaseEstimator, TransformerMixin):
+                def __init__(self, vectorizer=None):
+                    self.vectorizer = vectorizer or CountVectorizer(max_features=5000)
+                def fit(self, X, y=None):
+                    self.vectorizer.fit(X)
+                    return self
+                def transform(self, X):
+                    return self.vectorizer.transform(X).toarray()
+
+            # Build pipelines for question1 and question2
+            q1_pipeline = Pipeline([
+                ('vectorizer', TextVectorizerTransformer(CountVectorizer(max_features=5000))),
+                ('scaler', StandardScaler())
+            ])
+            q2_pipeline = Pipeline([
+                ('vectorizer', TextVectorizerTransformer(CountVectorizer(max_features=5000))),
+                ('scaler', StandardScaler())
+            ])
+
+            # Fit on all questions (train+test) for vocabulary consistency
             all_questions = pd.concat([
                 input_feature_train_df['question1'], input_feature_train_df['question2'],
                 input_feature_test_df['question1'], input_feature_test_df['question2']
             ]).astype(str).apply(self.preprocess)
-            cv.fit(all_questions)
 
-           # Vectorize all questions for train and test sets
-            q1_vecs = cv.transform(input_feature_train_df['question1']).toarray()
-            q2_vecs = cv.transform(input_feature_train_df['question2']).toarray()
-            q1_vecs_test = cv.transform(input_feature_test_df['question1']).toarray()
-            q2_vecs_test = cv.transform(input_feature_test_df['question2']).toarray()
+            q1_pipeline.named_steps['vectorizer'].fit(all_questions)
+            q2_pipeline.named_steps['vectorizer'].fit(all_questions)
+
+            # Transform train and test
+            q1_vecs = q1_pipeline.fit_transform(input_feature_train_df['question1'].astype(str).apply(self.preprocess))
+            q2_vecs = q2_pipeline.fit_transform(input_feature_train_df['question2'].astype(str).apply(self.preprocess))
+            q1_vecs_test = q1_pipeline.transform(input_feature_test_df['question1'].astype(str).apply(self.preprocess))
+            q2_vecs_test = q2_pipeline.transform(input_feature_test_df['question2'].astype(str).apply(self.preprocess))
 
             # Stack all features horizontally for each sample
             all_features = np.hstack([
-                np.tile(base_features, (q1_vecs.shape[0], 1)),  # repeat base_features for all rows
+                np.tile(base_features, (q1_vecs.shape[0], 1)),
                 tf, lf, ff, q1_vecs, q2_vecs
             ])
             all_features_test = np.hstack([
@@ -276,66 +300,19 @@ class DataTransformation:
             ])
             logging.info("All features concatenated for train and test data")
             logging.info(f"All features shape: {all_features.shape}, Test features shape: {all_features_test.shape}")
-            # Scale the features
-           # Scale the features
-            scaler = StandardScaler()
-            all_features = scaler.fit_transform(all_features)
-            all_features_test = scaler.transform(all_features_test)
-            logging.info("Features scaled using StandardScaler")
-            logging.info(f"Scaled features shape: {all_features.shape}, Scaled test features shape: {all_features_test.shape}")
 
             input_feature_train_final = all_features
             input_feature_test_final = all_features_test
             logging.info("Final input features prepared for train and test data")
             logging.info(f"Input feature train shape: {input_feature_train_final.shape}, Input feature test shape: {input_feature_test_final.shape}")
-            # Save the transformed data as numpy arrays
 
-            save_object(self.data_transformation_config.transformed_object_file_path, cv)
+            # Save the transformed data as numpy arrays
+            save_object(self.data_transformation_config.transformed_object_file_path, q1_pipeline.named_steps['vectorizer'].vectorizer)
             save_numpy_array_data(self.data_transformation_config.transformed_train_file_path, array=input_feature_train_final)
             save_numpy_array_data(self.data_transformation_config.transformed_test_file_path, array=input_feature_test_final)
             logging.info("Saving transformation object and transformed files.")
-
-            logging.info("Data transformation completed successfully")
-            return DataTransformationArtifact(
-                transformed_object_file_path=self.data_transformation_config.transformed_object_file_path,
-                transformed_train_file_path=self.data_transformation_config.transformed_train_file_path,
-                transformed_test_file_path=self.data_transformation_config.transformed_test_file_path
-            )
-
-        except ValueError as e:
-            logging.error(f"ValueError: {e}. Ensure that the input DataFrame contains valid data for transformation.")
-            dummy = np.zeros((1, 1))
-            return dummy
-
-        except KeyError as e:
-            logging.error(f"KeyError: {e}. Ensure that the input DataFrame contains the required columns.")
-            dummy = np.zeros((1, 1))
-            return dummy
-
+        
         except Exception as e:
-            logging.error(f"Error in initiate_data_transformation: {e}")
+            logging.info("Exception occured before initiating tranformation block")
             raise MyException(e, sys)
-
-            # --- Remove the second vectorization block below ---
-            # cv = CountVectorizer(max_features=5000)
-            # logging.info("CountVectorizer initialized for text vectorization")
-            # all_questions = pd.concat([
-            #     input_feature_train_df['question1'], input_feature_train_df['question2'],
-            #     input_feature_test_df['question1'], input_feature_test_df['question2']
-            # ]).astype(str).apply(DataTransformation.preprocess)
-            # cv.fit(all_questions)
-            # logging.info("CountVectorizer fitted on all questions")
-
-            # input_feature_train_df['question1'] = cv.transform(input_feature_train_df['question1'].astype(str).apply(DataTransformation.preprocess)).toarray()
-            # input_feature_train_df['question2'] = cv.transform(input_feature_train_df['question2'].astype(str).apply(DataTransformation.preprocess)).toarray()
-            # input_feature_test_df['question1'] = cv.transform(input_feature_test_df['question1'].astype(str).apply(DataTransformation.preprocess)).toarray()
-            # input_feature_test_df['question2'] = cv.transform(input_feature_test_df['question2'].astype(str).apply(DataTransformation.preprocess)).toarray()
-            # logging.info("Questions transformed using CountVectorizer for train and test data")
-
-            # input_feature_train_df['question1'] = pd.DataFrame(input_feature_train_df['question1'].tolist(), index=input_feature_train_df.index)
-            # input_feature_train_df['question2'] = pd.DataFrame(input_feature_train_df['question2'].tolist(), index=input_feature_train_df.index)
-            # input_feature_test_df['question1'] = pd.DataFrame(input_feature_test_df['question1'].tolist(), index=input_feature_test_df.index)
-            # input_feature_test_df['question2'] = pd.DataFrame(input_feature_test_df['question2'].tolist(), index=input_feature_test_df.index)
-            # logging.info("Transformed questions converted to DataFrame for train and test data")
-
 # ...rest of the code remains unchanged...
