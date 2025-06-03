@@ -4,6 +4,7 @@ import pandas as pd
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.compose import ColumnTransformer
+from scipy import sparse
 
 from src.constants import TARGET_COLUMN, SCHEMA_FILE_PATH
 from src.entity.config_entity import DataTransformationConfig
@@ -291,24 +292,47 @@ class DataTransformation:
             logging.info("Vectorization and scaling done for question1 and question2 in train and test sets")
 
            
+            # Convert all arrays to float32 before stacking to save memory
+            def to_float32(arr):
+                return arr.astype(np.float32)
+
+            tf = to_float32(tf)
+            lf = to_float32(lf)
+            ff = to_float32(ff)
+            q1_vecs = to_float32(q1_vecs)
+            q2_vecs = to_float32(q2_vecs)
+            target_feature_train = to_float32(target_feature_train_df.values.reshape(-1, 1))
+
+            tf_test = to_float32(tf_test)
+            lf_test = to_float32(lf_test)
+            ff_test = to_float32(ff_test)
+            q1_vecs_test = to_float32(q1_vecs_test)
+            q2_vecs_test = to_float32(q2_vecs_test)
+            target_feature_test = to_float32(target_feature_test_df.values.reshape(-1, 1))
+
+            base_features_arr = np.tile(np.array(base_features, dtype=np.float32).reshape(1, -1), (q1_vecs.shape[0], 1))
+            base_features_test_arr = np.tile(np.array(base_features_test, dtype=np.float32).reshape(1, -1), (q1_vecs_test.shape[0], 1))
+
             # Stack all features horizontally for each sample
             all_features = np.hstack([
-                np.tile(base_features, (q1_vecs.shape[0], 1)),
-                tf, lf, ff, q1_vecs, q2_vecs, target_feature_train_df.values.reshape(-1, 1)
+                base_features_arr,
+                tf, lf, ff, q1_vecs, q2_vecs, target_feature_train
             ])
             all_features_test = np.hstack([
-                np.tile(base_features_test, (q1_vecs_test.shape[0], 1)),
-                tf_test, lf_test, ff_test, q1_vecs_test, q2_vecs_test, target_feature_test_df.values.reshape(-1, 1)
+                base_features_test_arr,
+                tf_test, lf_test, ff_test, q1_vecs_test, q2_vecs_test, target_feature_test
             ])
-            logging.info("All features concatenated for train and test data")
-            logging.info(f"All features shape: {all_features.shape}, Test features shape: {all_features_test.shape}")
+
+            logging.info(f"All features shape: {all_features.shape}, dtype: {all_features.dtype}")
+            logging.info(f"Test features shape: {all_features_test.shape}, dtype: {all_features_test.dtype}")
 
             input_feature_train_final = all_features
             input_feature_test_final = all_features_test
+
             logging.info("Final input features prepared for train and test data")
             logging.info(f"Input feature train shape: {input_feature_train_final.shape}, Input feature test shape: {input_feature_test_final.shape}")
 
-            # Save the transformed data as numpy arrays
+            # Save the transformed data as numpy arrays (dense, float32)
             save_object(self.data_transformation_config.transformed_object_file_path, q1_pipeline.named_steps['vectorizer'].vectorizer)
             save_numpy_array_data(self.data_transformation_config.transformed_train_file_path, array=input_feature_train_final)
             save_numpy_array_data(self.data_transformation_config.transformed_test_file_path, array=input_feature_test_final)
@@ -324,4 +348,5 @@ class DataTransformation:
         except Exception as e:
             logging.info("Exception occured before initiating tranformation block")
             raise MyException(e, sys)
-# ...rest of the code remains unchanged...
+
+        # input_feature_train_final = sparse.load_npz(self.data_transformation_config.transformed_train_file_path.replace('.npy', '.npz'))

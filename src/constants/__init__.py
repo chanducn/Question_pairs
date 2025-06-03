@@ -68,7 +68,7 @@ XGB_EVAL_METRIC = 'logloss'
 MODEL Evaluation related constants
 """
 MODEL_EVALUATION_CHANGED_THRESHOLD_SCORE: float = 0.02
-MODEL_BUCKET_NAME = "my-model-mlopsproj"
+MODEL_BUCKET_NAME = "question-pairs-mlops"
 MODEL_PUSHER_S3_KEY = "model-registry"
 
 
