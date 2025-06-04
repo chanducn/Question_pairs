@@ -1,23 +1,24 @@
-# Use an official Python 3.10 image from Docker Hub
+# Use an official Python 3.10 image
 FROM python:3.10-slim-buster
 
-# Set the working directory
+# Set working directory
 WORKDIR /app
 
-# Copy your application code
+# Copy app files
 COPY . /app
 
-# Install the dependencies
+# Install dependencies
+RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
-RUN mkdir -p /usr/share/nltk_data
-RUN python3 -m nltk.downloader -d /usr/share/nltk_data wordnet
-ENV NLTK_DATA=/usr/share/nltk_data
 
+# Download NLTK data to standard path
+RUN python3 -m nltk.downloader wordnet omw-1.4
 
+# OPTIONAL: set environment variable just in case
+ENV NLTK_DATA=/root/nltk_data
 
-# Expose the port FastAPI will run on
+# Expose app port
 EXPOSE 5000
 
-# Command to run the FastAPI app
+# Start the app
 CMD ["python3", "app.py"]
-# CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080"]

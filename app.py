@@ -7,12 +7,16 @@ from starlette.responses import HTMLResponse, RedirectResponse
 from uvicorn import run as app_run
 
 from typing import Optional
+import os
 
 # Importing constants and pipeline modules from the project
 from src.constants import APP_HOST, APP_PORT
 from src.pipline.prediction_pipeline import question_Data, QuestionDataClassifier
 from src.pipline.prediction_pipeline import duplicate_question_PredictorConfig
 from src.pipline.training_pipeline import TrainPipeline
+
+# Set NLTK data path
+os.environ["NLTK_DATA"] = "/usr/share/nltk_data"
 
 # Initialize FastAPI application
 app = FastAPI()
