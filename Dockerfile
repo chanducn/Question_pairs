@@ -11,11 +11,11 @@ COPY . /app
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
-# Download NLTK data to standard path
-RUN python3 -m nltk.downloader wordnet omw-1.4
+RUN mkdir -p /usr/share/nltk_data
+RUN python3 -m nltk.downloader -d /usr/share/nltk_data wordnet
 
-# OPTIONAL: set environment variable just in case
-ENV NLTK_DATA=/root/nltk_data
+
+ENV NLTK_DATA=/usr/share/nltk_data
 
 # Expose app port
 EXPOSE 5000
