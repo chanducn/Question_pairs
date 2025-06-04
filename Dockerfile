@@ -10,8 +10,8 @@ COPY . /app
 # Install the dependencies
 RUN pip install -r requirements.txt
 RUN mkdir -p /usr/share/nltk_data
+RUN python3 -m nltk.downloader -d /usr/share/nltk_data wordnet
 ENV NLTK_DATA=/usr/share/nltk_data
-RUN python3 -m nltk.downloader wordnet
 
 
 
