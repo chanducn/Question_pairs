@@ -9,18 +9,20 @@ from src.logger import logging
 
 class TargetValueMapping:
     def __init__(self):
-        self.yes:int = 0
-        self.no:int = 1
+        self.yes: int = 0
+        self.no: int = 1
+
     def _asdict(self):
         return self.__dict__
+
     def reverse_mapping(self):
         mapping_response = self._asdict()
-        return dict(zip(mapping_response.values(),mapping_response.keys()))
+        return dict(zip(mapping_response.values(), mapping_response.keys()))
 
 class MyModel:
-    def __init__(self, preprocessing_object: Pipeline, trained_model_object: object):
+    def __init__(self, preprocessing_object: object, trained_model_object: object):
         """
-        :param preprocessing_object: Input Object of preprocesser
+        :param preprocessing_object: Input Object of preprocesser (should be a pipeline or transformer)
         :param trained_model_object: Input Object of trained model 
         """
         self.preprocessing_object = preprocessing_object
@@ -28,13 +30,13 @@ class MyModel:
 
     def predict(self, dataframe: pd.DataFrame) -> DataFrame:
         """
-        Function accepts preprocessed inputs (with all custom transformations already applied),
-        applies scaling using preprocessing_object, and performs prediction on transformed features.
+        Function accepts a DataFrame with 'question1' and 'question2' columns,
+        applies the preprocessing pipeline, and performs prediction on transformed features.
         """
         try:
             logging.info("Starting prediction process.")
 
-            # Step 1: Apply scaling transformations using the pre-trained preprocessing object
+            # Step 1: Apply all transformations using the pre-trained preprocessing object
             transformed_feature = self.preprocessing_object.transform(dataframe)
 
             # Step 2: Perform prediction using the trained model
@@ -46,7 +48,6 @@ class MyModel:
         except Exception as e:
             logging.error("Error occurred in predict method", exc_info=True)
             raise MyException(e, sys) from e
-
 
     def __repr__(self):
         return f"{type(self.trained_model_object).__name__}()"

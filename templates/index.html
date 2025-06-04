@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Question Pair Checker</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+    <div class="container">
+        <h2>Are these questions duplicates?</h2>
+        <form method="post">
+            <textarea name="question1" placeholder="Enter the first question" required></textarea>
+            <textarea name="question2" placeholder="Enter the second question" required></textarea>
+            <button type="submit">Check</button>
+        </form>
+        {% if context %}
+            <div class="result">{{ context }}</div>
+        {% endif %}
+    </div>
+</body>
+</html>

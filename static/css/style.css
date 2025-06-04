@@ -1,0 +1,47 @@
+body {
+    background: url('/static/background.png') no-repeat center center fixed;
+    background-size: cover;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+.container {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    width: 400px;
+}
+h2 {
+    margin-bottom: 20px;
+    color: #333;
+}
+input[type=text], textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+button {
+    width: 100%;
+    padding: 10px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+}
+button:hover {
+    background: #1d4ed8;
+}
+.result {
+    margin-top: 15px;
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #10b981;
+}
+
