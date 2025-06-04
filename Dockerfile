@@ -9,6 +9,8 @@ COPY . /app
 
 # Install the dependencies
 RUN pip install -r requirements.txt
+RUN python3 -m nltk.downloader wordnet
+
 
 # Expose the port FastAPI will run on
 EXPOSE 5000
