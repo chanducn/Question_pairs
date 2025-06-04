@@ -23,4 +23,5 @@ uvicorn
 jinja2
 imblearn
 ipykernel
+nltk
 -e .
