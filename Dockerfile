@@ -4,15 +4,19 @@ WORKDIR /app
 
 COPY . /app
 
-RUN pip install --upgrade pip && \
+RUN apt-get update && apt-get install -y curl unzip && \
+    pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Download both required NLTK packages
-RUN mkdir -p /usr/share/nltk_data && \
-    python3 -m nltk.downloader -d /usr/share/nltk_data wordnet omw-1.4 && \
-    ls /usr/share/nltk_data/corpora/wordnet
+# Download and extract WordNet manually
+RUN mkdir -p /usr/share/nltk_data/corpora && \
+    curl -L -o /tmp/wordnet.zip https://raw.githubusercontent.com/nltk/nltk_data/gh-pages/packages/corpora/wordnet.zip && \
+    unzip /tmp/wordnet.zip -d /usr/share/nltk_data/corpora && \
+    curl -L -o /tmp/omw-1.4.zip https://raw.githubusercontent.com/nltk/nltk_data/gh-pages/packages/corpora/omw-1.4.zip && \
+    unzip /tmp/omw-1.4.zip -d /usr/share/nltk_data/corpora && \
+    rm -rf /tmp/*.zip
 
-# Set environment variable
+# Set environment variable for NLTK
 ENV NLTK_DATA=/usr/share/nltk_data
 
 EXPOSE 5000
