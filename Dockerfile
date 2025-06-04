@@ -9,7 +9,10 @@ COPY . /app
 
 # Install the dependencies
 RUN pip install -r requirements.txt
+RUN mkdir -p /usr/share/nltk_data
+ENV NLTK_DATA=/usr/share/nltk_data
 RUN python3 -m nltk.downloader wordnet
+
 
 
 # Expose the port FastAPI will run on
