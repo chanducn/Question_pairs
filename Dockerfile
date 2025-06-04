@@ -1,24 +1,25 @@
-# Use an official Python 3.10 image
+# Use Python base image
 FROM python:3.10-slim-buster
 
 # Set working directory
 WORKDIR /app
 
-# Copy app files
+# Copy application files
 COPY . /app
 
-# Install dependencies
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+# Install Python dependencies
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-RUN mkdir -p /usr/share/nltk_data
-RUN python3 -m nltk.downloader -d /usr/share/nltk_data wordnet
+# Set up NLTK data
+RUN mkdir -p /usr/share/nltk_data && \
+    python3 -m nltk.downloader -d /usr/share/nltk_data wordnet omw-1.4
 
-
+# Tell Python where to find NLTK data
 ENV NLTK_DATA=/usr/share/nltk_data
 
-# Expose app port
+# Expose port
 EXPOSE 5000
 
-# Start the app
+# Run your app
 CMD ["python3", "app.py"]
