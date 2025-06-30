@@ -5,6 +5,12 @@ from src.exception import MyException
 from src.logger import logging
 from pandas import DataFrame
 from dotenv import load_dotenv
+import os
+import nltk
+
+# Ensure nltk uses the correct data path (this is optional, but safe)
+nltk.data.path.append("/usr/share/nltk_data")
+
 load_dotenv()
 
 
