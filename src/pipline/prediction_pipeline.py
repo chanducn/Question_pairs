@@ -4,6 +4,8 @@ from src.entity.s3_estimator import Proj1Estimator
 from src.exception import MyException
 from src.logger import logging
 from pandas import DataFrame
+from dotenv import load_dotenv
+load_dotenv()
 
 
 class question_Data:
