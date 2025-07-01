@@ -187,6 +187,7 @@ cython_debug/
 .pypirc
 
 .env
+demo.py
 
 # Cursor
 #  Cursor is an AI-powered code editor. `.cursorignore` specifies files/directories to
